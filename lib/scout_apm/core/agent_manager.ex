@@ -32,16 +32,20 @@ defmodule ScoutApm.Core.AgentManager do
     core_agent_launch = ScoutApm.Config.find(:core_agent_launch)
     key = ScoutApm.Config.find(:key)
 
-    if enabled && core_agent_launch && key do
-      with {:ok, manifest} <- verify_or_download(),
-           bin_path when is_binary(bin_path) <- Manifest.bin_path(manifest),
-           {:ok, socket} <- run(bin_path) do
-        register()
-        app_metadata()
-        socket
+    if enabled && key do
+      if core_agent_launch do
+        with {:ok, manifest} <- verify_or_download(),
+             bin_path when is_binary(bin_path) <- Manifest.bin_path(manifest),
+             {:ok, socket} <- run(bin_path) do
+          register()
+          app_metadata()
+          socket
+        else
+          _e ->
+            nil
+        end
       else
-        _e ->
-          nil
+        Core.socket_path()
       end
     else
       nil
