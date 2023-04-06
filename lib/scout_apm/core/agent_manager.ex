@@ -45,7 +45,8 @@ defmodule ScoutApm.Core.AgentManager do
             nil
         end
       else
-        Core.socket_path()
+        {:ok, socket} = gen_tcp_connect()
+        socket
       end
     else
       nil
@@ -209,6 +210,15 @@ defmodule ScoutApm.Core.AgentManager do
     end
   end
 
+  defp core_agent_tcp_ip do
+    ScoutApm.Config.find(:core_agent_tcp_ip)
+    |> :inet_parse.ntoa()
+  end
+
+  defp core_agent_tcp_port do
+    ScoutApm.Config.find(:core_agent_tcp_port)
+  end
+
   defp send_message(message, %{socket: socket} = state) do
     with {:ok, encoded} <- Jason.encode(message),
          message_length <- byte_size(encoded),
@@ -282,5 +292,12 @@ defmodule ScoutApm.Core.AgentManager do
         :timer.sleep(500)
         :gen_tcp.connect(ip, port, [{:active, false}, :binary])
     end
+  end
+
+  defp gen_tcp_connect do
+    ip = core_agent_tcp_ip()
+    port = core_agent_tcp_port()
+
+    :gen_tcp.connect(ip, port, [{:active, false}, :binary])
   end
 end
